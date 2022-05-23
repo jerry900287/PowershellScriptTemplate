@@ -1,4 +1,5 @@
-﻿#==== Function for writing log ====
+﻿chcp 437
+#==== Function for writing log ====
 Function Write-Log {
     param (
         [string]$logString = "",
@@ -13,18 +14,18 @@ Function Write-Log {
 Function Delete-File{
     param (
         [string]$path = "$($logFolder)",
-        [int]$reservedQuantity = 30,
+        [int]$remainingQuantity = 30,
         [string]$mode = "Count"
     )
     
     if ($mode -eq "Count"){
-        $reservedFiles = Get-ChildItem -Path $path | Select-Object -ExpandProperty Name -last $reservedQuantity
-        Get-ChildItem -Path $path -Exclude $reservedFiles | Remove-Item -Force -ErrorAction SilentlyContinue
+        $remainingFiles = Get-ChildItem -Path $path | Select-Object -ExpandProperty Name -last $remainingQuantity
+        Get-ChildItem -Path $path -Exclude $remainingFiles | Remove-Item -Force -ErrorAction SilentlyContinue
     }
 
     if ($mode -eq "Day"){
-        $reservedFiles = Get-ChildItem -Path $path | Where-Object {$_.LastWriteTime -lt $(Get-Date).AddDays(-($reservedQuantity))}
-        $reservedFiles | Remove-Item -Force -ErrorAction SilentlyContinue
+        $remainingFiles = Get-ChildItem -Path $path | Where-Object {$_.LastWriteTime -lt $(Get-Date).AddDays(-($remainingQuantity))}
+        $remainingFiles | Remove-Item -Force -ErrorAction SilentlyContinue
     }
 }
 #===================================
@@ -33,15 +34,24 @@ Function Delete-File{
 $projectName = "Test"
 $logFolder = "D:\Testing"
 $logFile = "$(Get-Date -f yyyyMMdd-HHmmss)_$($projectName).log" 
-$logReservedQuantity = 5
-$logReservedMode = "Count"
+$logRemainingQuantity = 5
+$logRemainingMode = "Count"
 
 if (!(Test-Path $logFolder)){
     New-Item -ItemType directory -Path $logFolder
 }
 
-Delete-File -Path $logFolder -ReservedQuantity $logReservedQuantity -Mode $logReservedMode
+Delete-File -Path $logFolder -ReservedQuantity $logRemainingQuantity -Mode $logRemainingMode
 #===================================
+
+#==== Initial Script Setting ====
+$sessionUser = Query user | Where-Object {$_ -match "Active"}
+$sessionActiveID = $sessionUser.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)[2]
+$messageShowerFile = "$($PSScriptRoot)\MessageShower.exe"
+#===================================
+
+#==== Script Region ====
+& "$($PSScriptRoot)\PsExec.exe" /accepteula /d /i $($sessionActiveID) "$($PSScriptRoot)\MessageShower.exe" "-m" "Info" "-t" "System Info" "-z" "213" "-e" "123"
 
 Write-Log "Hello World"
 
